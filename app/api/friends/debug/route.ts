@@ -29,6 +29,8 @@ async function authenticateRequest(request: NextRequest) {
   return { user, error: null }
 }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Starting Enhanced Friends System Debug...')

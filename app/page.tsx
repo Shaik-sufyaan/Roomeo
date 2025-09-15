@@ -22,17 +22,16 @@ import ProfilePreview from "@/components/ProfilePreview"
 import SettingsPage from "@/components/SettingsPage"
 import SessionRecovery from "@/components/SessionRecovery"
 import UpgradeFlow from "@/components/UpgradeFlow"
-import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import DebugInfo from "@/components/DebugInfo"
 import { FriendsPanel, FriendsPanelToggle } from "@/components/friends"
-import { normalizeAvatarUrl, getFallbackAvatarUrl } from "@/lib/avatarUtils" 
+import { normalizeAvatarUrl, getFallbackAvatarUrl } from "@/lib/avatarUtils"
+import SearchParamsHandler from "@/components/SearchParamsHandler" 
 
 export default function Home() {
   const { user, loading, logout, error: authError, sessionValid } = useAuth()
-  const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState<
     "landing" | "auth" | "swipe" | "matches" | "marketplace" |
     "expenses" | "chat" | "profile-setup" | "user-type" | "profile-preview" | "settings"
@@ -54,42 +53,10 @@ export default function Home() {
     budget: ""
   })
 
-  // Handle URL parameters for auth messages
-  useEffect(() => {
-    const urlError = searchParams?.get('error')
-    const urlErrorDescription = searchParams?.get('error_description')
-    const urlMessage = searchParams?.get('message')
-
-    if (urlError) {
-      setUrlMessage({
-        type: 'error',
-        text: urlErrorDescription || urlError
-      })
-
-      // Clear URL parameters after showing message
-      const url = new URL(window.location.href)
-      url.searchParams.delete('error')
-      url.searchParams.delete('error_description')
-      window.history.replaceState({}, '', url.toString())
-    } else if (urlMessage) {
-      setUrlMessage({
-        type: 'success',
-        text: urlMessage
-      })
-
-      // Clear URL parameters after showing message
-      const url = new URL(window.location.href)
-      url.searchParams.delete('message')
-      window.history.replaceState({}, '', url.toString())
-    }
-
-    // Auto-hide message after 8 seconds
-    if (urlError || urlMessage) {
-      setTimeout(() => {
-        setUrlMessage(null)
-      }, 8000)
-    }
-  }, [searchParams])
+  // Handle URL messages through separate component
+  const handleUrlMessage = (message: { type: 'error' | 'success', text: string } | null) => {
+    setUrlMessage(message)
+  }
 
   // Debug logging
   useEffect(() => {
@@ -449,6 +416,9 @@ export default function Home() {
 
     return (
       <ErrorBoundary>
+        <Suspense fallback={<LoadingSpinner />}>
+          <SearchParamsHandler onMessage={handleUrlMessage} />
+        </Suspense>
         <div className="min-h-screen bg-[#F2F5F1]">
           {/* URL Message Banner */}
           {urlMessage && (

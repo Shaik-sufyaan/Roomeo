@@ -31,6 +31,8 @@ async function createAuthenticatedSupabaseClient(request: NextRequest) {
   return { supabase, user, error: null }
 }
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/friends/search?q={query} - Search users by name
 export async function GET(request: NextRequest) {
   try {
